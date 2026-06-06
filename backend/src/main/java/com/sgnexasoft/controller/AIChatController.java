@@ -22,11 +22,11 @@ public class AIChatController {
     @PostMapping("/chat")
     public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
         if (apiKey == null || apiKey.isBlank()) {
-            return ResponseEntity.ok(Map.of("reply", getFallbackReply((String) getFirstMessage(body))));
+            return ResponseEntity.ok(Map.of("reply", getFallbackReply(String.valueOf(getFirstMessage(body)))));
         }
         try {
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "claude-sonnet-4-20250514");
+            requestBody.put("model", "claude-3-5-sonnet-20241022");
             requestBody.put("max_tokens", 1000);
             if (body.containsKey("system")) requestBody.put("system", body.get("system"));
             requestBody.put("messages", body.get("messages"));

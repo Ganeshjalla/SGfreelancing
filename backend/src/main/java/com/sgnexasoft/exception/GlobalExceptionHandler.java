@@ -22,7 +22,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneral(Exception ex) {
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error: " + ex.getMessage());
+        // Log full details server-side only; return generic message to client
+        System.err.println("Unhandled exception: " + ex.getClass().getName() + " - " + ex.getMessage());
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
     }
 
     private ResponseEntity<?> error(HttpStatus status, String message) {

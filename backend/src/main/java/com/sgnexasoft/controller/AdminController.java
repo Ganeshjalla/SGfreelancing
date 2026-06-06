@@ -22,7 +22,7 @@ public class AdminController {
         stats.put("totalProjects", projectRepository.count());
         stats.put("openProjects", projectRepository.countByStatus(com.sgnexasoft.model.Project.Status.OPEN));
         stats.put("completedProjects", projectRepository.countByStatus(com.sgnexasoft.model.Project.Status.COMPLETED));
-        Double total = paymentRepository.getTotalReleasedAmount();
+        Double total = paymentRepository.getTotalReleasedAmount(com.sgnexasoft.model.Payment.Status.RELEASED);
         stats.put("totalPaymentsReleased", total != null ? total : 0.0);
         return ResponseEntity.ok(stats);
     }

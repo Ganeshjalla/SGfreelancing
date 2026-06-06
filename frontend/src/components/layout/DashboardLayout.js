@@ -40,8 +40,8 @@ export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  // ✅ FIX 1: Start as true on desktop so sidebar shows by default
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -63,10 +63,11 @@ export default function DashboardLayout({ children }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ✅ FIX 2: Handle window resize — auto open on desktop, auto close on mobile
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1024) {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+      if (desktop) {
         setSidebarOpen(true);
       } else {
         setSidebarOpen(false);
@@ -93,8 +94,6 @@ export default function DashboardLayout({ children }) {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   const isActive = (path) => location.pathname === path;
-
-  const isDesktop = window.innerWidth >= 1024;
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>

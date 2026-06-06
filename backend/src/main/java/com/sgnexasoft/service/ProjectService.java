@@ -40,13 +40,20 @@ public class ProjectService {
         if (client.getRole() != User.Role.CLIENT)
             throw new BadRequestException("Only clients can post projects");
 
+        String title = (String) req.get("title");
+        if (title == null || title.isBlank())
+            throw new BadRequestException("Project title is required");
+        if (projectRepository.existsByClientAndTitle(client, title.trim()))
+            throw new BadRequestException("You already have a project with this title");
+
         Project project = Project.builder()
-                .title((String) req.get("title"))
+                .title(title.trim())
                 .description((String) req.get("description"))
                 .budget(Double.parseDouble(req.get("budget").toString()))
                 .category((String) req.get("category"))
                 .requiredSkills((String) req.get("requiredSkills"))
-                .deadline(req.get("deadline") != null ? LocalDateTime.parse(req.get("deadline").toString()) : null)
+                .deadline(req.get("deadline") != null && !req.get("deadline").toString().isBlank()
+                        ? LocalDateTime.parse(req.get("deadline").toString()) : null)
                 .client(client)
                 .status(Project.Status.OPEN)
                 .build();

@@ -55,7 +55,7 @@ public class MessageService {
             map.put("id", p.getId());
             map.put("name", p.getName());
             map.put("role", p.getRole());
-            map.put("unreadCount", messageRepository.countUnreadMessages(user));
+            map.put("unreadCount", messageRepository.countUnreadFrom(p, user));
             return map;
         }).toList();
     }

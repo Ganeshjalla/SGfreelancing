@@ -35,7 +35,7 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       APP_JWT_SECRET: SGNexasoftSuperSecretKeyThatIsAtLeast32Chars!
       APP_UPLOAD_DIR: /app/uploads/
-      ANTHROPIC_API_KEY: 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
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -46,7 +46,7 @@ services:
     build:
       context: ./frontend
       args:
-        REACT_APP_API_URL: http://backend:8082
+        REACT_APP_API_URL: http://localhost:8082
     container_name: sgnexasoft-frontend
     ports:
       - "80:80"
