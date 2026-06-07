@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userAPI } from '../api/services';
-import { User, Mail, Star, Edit2, Save, X } from 'lucide-react';
+import { Star, Edit2, Save } from 'lucide-react';
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -13,21 +13,18 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
 
-  useEffect(() => { loadProfile(); }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const [profRes, revRes] = await Promise.all([
-        userAPI.getProfile(),
-        userAPI.getReviews(user.id)
-      ]);
+      const [profRes, revRes] = await Promise.all([userAPI.getProfile(), userAPI.getReviews(user.id)]);
       setProfile(profRes.data);
       setReviews(revRes.data);
       setForm({ name: profRes.data.name || '', bio: profRes.data.bio || '', skills: profRes.data.skills || '' });
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -60,48 +57,36 @@ export default function Profile() {
       <div className="card" style={{ padding: 32, marginBottom: 24, animation: 'slideUp 0.4s ease' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 28, fontWeight: 800
-            }}>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 28, fontWeight: 800 }}>
               {profile?.name?.charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 800 }}>{profile?.name}</h2>
               <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{profile?.email}</p>
-              <span style={{
-                display: 'inline-block', marginTop: 6, padding: '3px 12px', borderRadius: 20,
-                background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700, fontSize: 12
-              }}>{profile?.role}</span>
+              <span style={{ display: 'inline-block', marginTop: 6, padding: '3px 12px', borderRadius: 20, background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700, fontSize: 12 }}>{profile?.role}</span>
             </div>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={() => { editing ? handleSave() : setEditing(true); }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => editing ? handleSave() : setEditing(true)}>
             {editing ? <><Save size={14} /> Save</> : <><Edit2 size={14} /> Edit</>}
           </button>
         </div>
 
-        {/* Stats row */}
         <div className="grid-3" style={{ marginBottom: 28 }}>
           <div style={{ textAlign: 'center', padding: 16, background: 'var(--bg)', borderRadius: 12 }}>
             <p style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)' }}>₹{(profile?.walletBalance || 0).toFixed(2)}</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Wallet Balance</p>
           </div>
           <div style={{ textAlign: 'center', padding: 16, background: 'var(--bg)', borderRadius: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginBottom: 4 }}>
-              {stars(profile?.rating || 0)}
-            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginBottom: 4 }}>{stars(profile?.rating || 0)}</div>
             <p style={{ fontSize: 20, fontWeight: 800 }}>{(profile?.rating || 0).toFixed(1)}</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{profile?.totalRatings} reviews</p>
           </div>
           <div style={{ textAlign: 'center', padding: 16, background: 'var(--bg)', borderRadius: 12 }}>
-            <p style={{ fontSize: 28, fontWeight: 800 }}>{new Date(profile?.createdAt).getFullYear()}</p>
+            <p style={{ fontSize: 28, fontWeight: 800 }}>{profile?.createdAt ? new Date(profile.createdAt).getFullYear() : '-'}</p>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Member Since</p>
           </div>
         </div>
 
-        {/* Edit form */}
         {editing ? (
           <div>
             <div style={{ marginBottom: 16 }}>
@@ -110,38 +95,26 @@ export default function Profile() {
             </div>
             <div style={{ marginBottom: 16 }}>
               <label className="label">Bio</label>
-              <textarea className="input" rows={3} placeholder="Tell others about yourself..."
-                value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
+              <textarea className="input" rows={3} placeholder="Tell others about yourself..." value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label className="label">Skills (comma separated)</label>
-              <input className="input" placeholder="React, Node.js, Python..."
-                value={form.skills} onChange={e => setForm({ ...form, skills: e.target.value })} />
+              <input className="input" placeholder="React, Node.js, Python..." value={form.skills} onChange={e => setForm({ ...form, skills: e.target.value })} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
+              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
               <button className="btn btn-ghost" onClick={() => setEditing(false)}>Cancel</button>
             </div>
           </div>
         ) : (
           <div>
-            {profile?.bio && (
-              <div style={{ marginBottom: 16 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>BIO</p>
-                <p style={{ fontSize: 15, lineHeight: 1.7 }}>{profile.bio}</p>
-              </div>
-            )}
+            {profile?.bio && <div style={{ marginBottom: 16 }}><p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>BIO</p><p style={{ fontSize: 15, lineHeight: 1.7 }}>{profile.bio}</p></div>}
             {profile?.skills && (
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>SKILLS</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {profile.skills.split(',').filter(Boolean).map(s => (
-                    <span key={s} style={{
-                      padding: '5px 14px', background: 'var(--primary-light)',
-                      color: 'var(--primary)', borderRadius: 20, fontSize: 13, fontWeight: 600
-                    }}>{s.trim()}</span>
+                    <span key={s} style={{ padding: '5px 14px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 20, fontSize: 13, fontWeight: 600 }}>{s.trim()}</span>
                   ))}
                 </div>
               </div>
@@ -150,7 +123,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Reviews */}
       {reviews.length > 0 && (
         <div className="card" style={{ padding: 28, animation: 'slideUp 0.4s ease 0.2s both' }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Reviews ({reviews.length})</h2>
@@ -162,9 +134,7 @@ export default function Profile() {
                   <div style={{ display: 'flex', gap: 2 }}>{stars(r.rating)}</div>
                 </div>
                 <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>{r.comment}</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-                  Project: {r.projectTitle} · {new Date(r.createdAt).toLocaleDateString()}
-                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>Project: {r.projectTitle} · {new Date(r.createdAt).toLocaleDateString()}</p>
               </div>
             ))}
           </div>

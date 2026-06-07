@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: sgnexasoft-backend
+    runtime: java
+    rootDir: backend
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -Xms256m -Xmx512m -jar target/sgnexasoft-backend-1.0.0.jar
+    plan: free
+    healthCheckPath: /api/auth/health
+    envVars:
+      - key: SERVER_PORT
+        value: 8082
+      - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+        value: com.mysql.cj.jdbc.Driver
+      - key: SPRING_JPA_DATABASE_PLATFORM
+        value: org.hibernate.dialect.MySQLDialect
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_JPA_SHOW_SQL
+        value: "false"
+      - key: APP_UPLOAD_DIR
+        value: /tmp/uploads/
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        sync: false
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: APP_JWT_SECRET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

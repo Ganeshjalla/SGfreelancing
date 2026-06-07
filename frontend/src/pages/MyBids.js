@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bidAPI } from '../api/services';
-import { Gavel, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { Gavel, ArrowRight } from 'lucide-react';
 
 export default function MyBids() {
   const [bids, setBids] = useState([]);
@@ -23,14 +23,7 @@ export default function MyBids() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {['ALL', 'PENDING', 'ACCEPTED', 'REJECTED'].map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{
-            padding: '7px 16px', borderRadius: 20, border: '1.5px solid',
-            borderColor: filter === s ? 'var(--primary)' : 'var(--border)',
-            background: filter === s ? 'var(--primary)' : '#fff',
-            color: filter === s ? '#fff' : 'var(--text-muted)',
-            fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: 'Inter, sans-serif'
-          }}>{s}</button>
+          <button key={s} onClick={() => setFilter(s)} style={{ padding: '7px 16px', borderRadius: 20, border: '1.5px solid', borderColor: filter === s ? 'var(--primary)' : 'var(--border)', background: filter === s ? 'var(--primary)' : '#fff', color: filter === s ? '#fff' : 'var(--text-muted)', fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif' }}>{s}</button>
         ))}
       </div>
 
@@ -52,10 +45,7 @@ export default function MyBids() {
                   <Link to={`/projects/${bid.projectId}`} style={{ textDecoration: 'none' }}>
                     <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{bid.projectTitle}</h3>
                   </Link>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6,
-                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {bid.proposal}
-                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{bid.proposal}</p>
                   <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
                     <span>Placed: {new Date(bid.createdAt).toLocaleDateString()}</span>
                     {bid.deliveryDays && <span>⏱ {bid.deliveryDays} days</span>}
@@ -67,10 +57,7 @@ export default function MyBids() {
                 </div>
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to={`/projects/${bid.projectId}`} style={{
-                  color: 'var(--primary)', textDecoration: 'none', fontSize: 13,
-                  fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4
-                }}>
+                <Link to={`/projects/${bid.projectId}`} style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   View Project <ArrowRight size={14} />
                 </Link>
               </div>

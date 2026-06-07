@@ -2,6 +2,8 @@ package com.sgnexasoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AIChatController {
 
+    private static final Logger log = LoggerFactory.getLogger(AIChatController.class);
+
     @Value("${anthropic.api.key:}")
     private String apiKey;
 
@@ -21,8 +25,9 @@ public class AIChatController {
 
     @PostMapping("/chat")
     public ResponseEntity<?> chat(@RequestBody Map<String, Object> body) {
+        String firstMessage = extractFirstMessage(body);
         if (apiKey == null || apiKey.isBlank()) {
-            return ResponseEntity.ok(Map.of("reply", getFallbackReply(String.valueOf(getFirstMessage(body)))));
+            return ResponseEntity.ok(Map.of("reply", getFallbackReply(firstMessage)));
         }
         try {
             Map<String, Object> requestBody = new HashMap<>();
@@ -43,21 +48,22 @@ public class AIChatController {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             var data = objectMapper.readTree(response.body());
             if (data.has("content") && data.get("content").size() > 0) {
-                String reply = data.get("content").get(0).get("text").asText();
-                return ResponseEntity.ok(Map.of("reply", reply));
+                return ResponseEntity.ok(Map.of("reply", data.get("content").get(0).get("text").asText()));
             }
-            return ResponseEntity.ok(Map.of("reply", "I couldn't process that. Please try again."));
+            return ResponseEntity.ok(Map.of("reply", getFallbackReply(firstMessage)));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("reply", getFallbackReply("")));
+            log.error("AI chat error: {}", e.getMessage());
+            return ResponseEntity.ok(Map.of("reply", getFallbackReply(firstMessage)));
         }
     }
 
-    private Object getFirstMessage(Map<String, Object> body) {
+    private String extractFirstMessage(Map<String, Object> body) {
         try {
             var messages = (List<?>) body.get("messages");
             if (messages != null && !messages.isEmpty()) {
-                var first = (Map<?, ?>) messages.get(0);
-                return first.get("content");
+                var first = (Map<?, ?>) messages.get(messages.size() - 1);
+                Object content = first.get("content");
+                return content != null ? content.toString() : "";
             }
         } catch (Exception ignored) {}
         return "";
@@ -66,18 +72,18 @@ public class AIChatController {
     private String getFallbackReply(String input) {
         if (input == null) input = "";
         input = input.toLowerCase();
-        if (input.contains("bid") || input.contains("proposal")) 
-            return "To place a bid: Go to Browse Projects, find a project, click it and submit your bid with your price and proposal. Make sure your bid is competitive!";
+        if (input.contains("bid") || input.contains("proposal"))
+            return "To place a bid: Go to Browse Projects, find a project, click it and submit your bid with your price and proposal.";
         if (input.contains("payment") || input.contains("wallet") || input.contains("money"))
-            return "Payments work through our escrow system. Clients add funds to their wallet, then initiate payment for a project. Funds are held safely until the client releases them after approval.";
+            return "Payments work through our escrow system. Clients add funds to wallet, initiate payment, and release after approval.";
         if (input.contains("submit") || input.contains("submission"))
-            return "To submit work: Go to My Projects, open the active project, and click 'Submit Work'. Include your GitHub URL, live URL, and a description of what you built.";
-        if (input.contains("message") || input.contains("contact") || input.contains("chat"))
-            return "Use the Messages section to communicate with clients or students. Click on Messages in the sidebar to start or continue conversations.";
+            return "To submit work: Go to My Projects, open the active project, and click Submit Work with your GitHub URL and description.";
+        if (input.contains("message") || input.contains("contact"))
+            return "Use the Messages section to communicate with clients or students.";
         if (input.contains("project") || input.contains("post"))
-            return "Clients can post projects from the Dashboard. Fill in title, description, budget, category, and deadline. Students will then bid on your project.";
-        if (input.contains("register") || input.contains("signup") || input.contains("sign up"))
-            return "Register as a CLIENT to post projects and hire students, or as a STUDENT to bid on projects and earn money. Use the Register button on the login page.";
-        return "Hi! I'm the SGNexasoft AI Assistant. I can help you with posting projects, placing bids, managing payments, submitting work, and using all platform features. What would you like to know?";
+            return "Clients can post projects from the Dashboard. Fill in title, description, budget, category, and deadline.";
+        if (input.contains("register") || input.contains("signup"))
+            return "Register as CLIENT to post projects or STUDENT to bid on projects. Use the Register button on the login page.";
+        return "Hi! I'm the SGNexasoft AI Assistant. I can help you with posting projects, placing bids, managing payments, and using all platform features. What would you like to know?";
     }
 }

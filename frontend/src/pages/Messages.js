@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { messageAPI } from '../api/services';
-import { Send, MessageCircle, User } from 'lucide-react';
+import { Send, MessageCircle } from 'lucide-react';
 
 export default function Messages() {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export default function Messages() {
       pollRef.current = setInterval(() => loadConversation(selectedUser.id), 5000);
     }
     return () => clearInterval(pollRef.current);
-  }, [selectedUser]);
+  }, [selectedUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,13 +56,11 @@ export default function Messages() {
     const text = input.trim();
     setInput('');
     setSending(true);
-    // Optimistic update
     const tempMsg = { id: Date.now(), content: text, senderId: user.id, senderName: user.name, createdAt: new Date().toISOString(), isRead: false };
     setMessages(prev => [...prev, tempMsg]);
     try {
       await messageAPI.send({ receiverId: selectedUser.id, content: text });
       loadConversation(selectedUser.id);
-      // Refresh partners for unread count update
       loadPartners();
     } catch (e) {
       setMessages(prev => prev.filter(m => m.id !== tempMsg.id));
@@ -87,14 +85,10 @@ export default function Messages() {
       <div style={{ display: 'flex', gap: 20, height: 'calc(100vh - 240px)', minHeight: 500 }}>
         {/* Partner list */}
         <div className="card" style={{ width: 280, flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 15 }}>
-            Conversations
-          </div>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 15 }}>Conversations</div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {loading ? (
-              <div style={{ padding: 16 }}>
-                {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12, marginBottom: 10 }} />)}
-              </div>
+              <div style={{ padding: 16 }}>{[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 60, borderRadius: 12, marginBottom: 10 }} />)}</div>
             ) : partners.length === 0 ? (
               <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
                 <MessageCircle size={32} style={{ margin: '0 auto 8px', color: '#cbd5e1' }} />
@@ -102,23 +96,13 @@ export default function Messages() {
                 <p style={{ fontSize: 12, marginTop: 4 }}>Accept a bid or get hired to start chatting</p>
               </div>
             ) : partners.map(p => (
-              <div key={p.id} onClick={() => setSelectedUser(p)} style={{
-                padding: '14px 20px', cursor: 'pointer', transition: 'background 0.2s',
-                background: selectedUser?.id === p.id ? 'var(--primary-light)' : 'transparent',
-                borderLeft: selectedUser?.id === p.id ? '3px solid var(--primary)' : '3px solid transparent',
-                display: 'flex', alignItems: 'center', gap: 12
-              }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 700, fontSize: 16
-                }}>
+              <div key={p.id} onClick={() => setSelectedUser(p)} style={{ padding: '14px 20px', cursor: 'pointer', transition: 'background 0.2s', background: selectedUser?.id === p.id ? 'var(--primary-light)' : 'transparent', borderLeft: selectedUser?.id === p.id ? '3px solid var(--primary)' : '3px solid transparent', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16 }}>
                   {p.name?.charAt(0)}
                 </div>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
                   <p style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.role}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.role}{p.unreadCount > 0 && <span style={{ marginLeft: 6, background: '#ef4444', color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: 10 }}>{p.unreadCount}</span>}</p>
                 </div>
               </div>
             ))}
@@ -135,14 +119,8 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              {/* Chat header */}
               <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontWeight: 700, fontSize: 16
-                }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16 }}>
                   {selectedUser.name?.charAt(0)}
                 </div>
                 <div>
@@ -151,40 +129,23 @@ export default function Messages() {
                 </div>
               </div>
 
-              {/* Messages area */}
               <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {msgLoading && messages.length === 0 ? (
-                  <div className="spinner" />
-                ) : messages.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
-                    <p>No messages yet. Say hi!</p>
-                  </div>
+                {msgLoading && messages.length === 0 ? <div className="spinner" /> : messages.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}><p>No messages yet. Say hi!</p></div>
                 ) : messages.map((msg) => {
                   const isMe = msg.senderId === user?.id;
                   return (
                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: 8 }}>
                       {!isMe && (
-                        <div style={{
-                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                          background: 'var(--primary-light)', display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', color: 'var(--primary)', fontWeight: 700, fontSize: 14
-                        }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 700, fontSize: 14 }}>
                           {msg.senderName?.charAt(0)}
                         </div>
                       )}
                       <div style={{ maxWidth: '72%' }}>
-                        <div style={{
-                          padding: '10px 16px', borderRadius: 16, fontSize: 14, lineHeight: 1.6,
-                          background: isMe ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f1f5f9',
-                          color: isMe ? '#fff' : 'var(--text)',
-                          borderBottomRightRadius: isMe ? 4 : 16,
-                          borderBottomLeftRadius: isMe ? 16 : 4,
-                        }}>
+                        <div style={{ padding: '10px 16px', borderRadius: 16, fontSize: 14, lineHeight: 1.6, background: isMe ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f1f5f9', color: isMe ? '#fff' : 'var(--text)', borderBottomRightRadius: isMe ? 4 : 16, borderBottomLeftRadius: isMe ? 16 : 4 }}>
                           {msg.content}
                         </div>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>
-                          {formatTime(msg.createdAt)}
-                        </p>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, textAlign: isMe ? 'right' : 'left' }}>{formatTime(msg.createdAt)}</p>
                       </div>
                     </div>
                   );
@@ -192,13 +153,9 @@ export default function Messages() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Input */}
               <form onSubmit={handleSend} style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: 12 }}>
-                <input className="input" placeholder={`Message ${selectedUser.name}...`}
-                  value={input} onChange={e => setInput(e.target.value)}
-                  style={{ flex: 1, borderRadius: 24 }} />
-                <button type="submit" className="btn btn-primary" disabled={!input.trim() || sending}
-                  style={{ borderRadius: 24, padding: '10px 20px' }}>
+                <input className="input" placeholder={`Message ${selectedUser.name}...`} value={input} onChange={e => setInput(e.target.value)} style={{ flex: 1, borderRadius: 24 }} />
+                <button type="submit" className="btn btn-primary" disabled={!input.trim() || sending} style={{ borderRadius: 24, padding: '10px 20px' }}>
                   <Send size={16} />
                 </button>
               </form>

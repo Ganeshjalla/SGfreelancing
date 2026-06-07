@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectAPI } from '../api/services';
-import { FolderOpen, Clock, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
+import { FolderOpen, ArrowRight } from 'lucide-react';
 
 export default function MyProjects() {
   const [projects, setProjects] = useState([]);
@@ -24,14 +24,9 @@ export default function MyProjects() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {statusFilters.map(s => (
-          <button key={s} onClick={() => setFilter(s)} style={{
-            padding: '7px 16px', borderRadius: 20, border: '1.5px solid',
-            borderColor: filter === s ? 'var(--primary)' : 'var(--border)',
-            background: filter === s ? 'var(--primary)' : '#fff',
-            color: filter === s ? '#fff' : 'var(--text-muted)',
-            fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s',
-            fontFamily: 'Inter, sans-serif'
-          }}>{s.replace('_', ' ')}</button>
+          <button key={s} onClick={() => setFilter(s)} style={{ padding: '7px 16px', borderRadius: 20, border: '1.5px solid', borderColor: filter === s ? 'var(--primary)' : 'var(--border)', background: filter === s ? 'var(--primary)' : '#fff', color: filter === s ? '#fff' : 'var(--text-muted)', fontWeight: 600, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', fontFamily: 'Inter, sans-serif' }}>
+            {s.replace('_', ' ')}
+          </button>
         ))}
       </div>
 
@@ -53,10 +48,7 @@ export default function MyProjects() {
                   <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--primary)' }}>₹{p.budget?.toLocaleString()}</span>
                 </div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>{p.title}</h3>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                  {p.description}
-                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.description}</p>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-muted)' }}>
                   <span>{p.category}</span>
                   <span>{new Date(p.createdAt).toLocaleDateString()}</span>

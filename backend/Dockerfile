@@ -10,4 +10,4 @@ WORKDIR /app
 RUN mkdir -p uploads
 COPY --from=build /app/target/sgnexasoft-backend-1.0.0.jar app.jar
 EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]

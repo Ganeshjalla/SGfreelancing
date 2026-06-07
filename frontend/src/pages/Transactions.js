@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { paymentAPI, userAPI } from '../api/services';
 import { CreditCard, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, DollarSign } from 'lucide-react';
@@ -13,9 +13,7 @@ export default function Transactions() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [payRes, profileRes] = await Promise.all([paymentAPI.getMy(), userAPI.getProfile()]);
@@ -23,7 +21,9 @@ export default function Transactions() {
       updateUser({ walletBalance: profileRes.data.walletBalance });
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleAddFunds = async (e) => {
     e.preventDefault();
@@ -35,9 +35,8 @@ export default function Transactions() {
       setAddFunds('');
       setSuccess(`₹${addFunds} added to wallet!`);
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add funds');
-    } finally { setAddingFunds(false); }
+    } catch (err) { setError(err.response?.data?.message || 'Failed to add funds'); }
+    finally { setAddingFunds(false); }
   };
 
   const handleRelease = async (paymentId) => {
@@ -47,9 +46,8 @@ export default function Transactions() {
       setSuccess('Payment released to student!');
       loadData();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to release payment');
-    } finally { setReleaseLoading(null); }
+    } catch (err) { alert(err.response?.data?.message || 'Failed to release payment'); }
+    finally { setReleaseLoading(null); }
   };
 
   const totalIn = payments.filter(p => p.status === 'RELEASED' && p.studentId === user?.id).reduce((a, b) => a + b.amount, 0);
@@ -65,13 +63,12 @@ export default function Transactions() {
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Wallet summary */}
       <div className="grid-3" style={{ marginBottom: 28 }}>
-        <div className="card" style={{ padding: 24, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', animation: 'slideUp 0.4s ease' }}>
+        <div className="card" style={{ padding: 24, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff' }}>
           <p style={{ opacity: 0.8, fontSize: 13, marginBottom: 8 }}>Wallet Balance</p>
           <p style={{ fontSize: 32, fontWeight: 800 }}>₹{(user?.walletBalance || 0).toFixed(2)}</p>
         </div>
-        <div className="card" style={{ padding: 24, animation: 'slideUp 0.4s ease 0.1s both' }}>
+        <div className="card" style={{ padding: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             {user?.role === 'STUDENT' ? <ArrowDownLeft size={20} color="#10b981" /> : <ArrowUpRight size={20} color="#ef4444" />}
             <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{user?.role === 'STUDENT' ? 'Total Earned' : 'Total Paid'}</p>
@@ -80,24 +77,20 @@ export default function Transactions() {
             ₹{(user?.role === 'STUDENT' ? totalIn : totalOut).toFixed(2)}
           </p>
         </div>
-        <div className="card" style={{ padding: 24, animation: 'slideUp 0.4s ease 0.2s both' }}>
+        <div className="card" style={{ padding: 24 }}>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>Total Transactions</p>
           <p style={{ fontSize: 28, fontWeight: 800 }}>{payments.length}</p>
         </div>
       </div>
 
-      {/* Add funds (CLIENT only) */}
       {user?.role === 'CLIENT' && (
-        <div className="card" style={{ padding: 24, marginBottom: 28, animation: 'slideUp 0.4s ease 0.3s both' }}>
+        <div className="card" style={{ padding: 24, marginBottom: 28 }}>
           <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 16 }}>Add Funds to Wallet</h2>
           <form onSubmit={handleAddFunds} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: '#64748b' }}>₹</span>
-                <input className="input" type="number" placeholder="Enter amount" min="1" step="0.01"
-                  value={addFunds} onChange={e => setAddFunds(e.target.value)}
-                  style={{ paddingLeft: 28 }} />
-              </div>
+            <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: '#64748b' }}>₹</span>
+              <input className="input" type="number" placeholder="Enter amount" min="1" step="0.01"
+                value={addFunds} onChange={e => setAddFunds(e.target.value)} style={{ paddingLeft: 28 }} />
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {[500, 1000, 5000, 10000].map(amt => (
@@ -113,43 +106,22 @@ export default function Transactions() {
         </div>
       )}
 
-      {/* Transaction history */}
-      <div className="card" style={{ padding: 24, animation: 'slideUp 0.4s ease 0.4s both' }}>
+      <div className="card" style={{ padding: 24 }}>
         <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 20 }}>Payment History</h2>
-
         {loading ? (
           <div>{[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 12, marginBottom: 12 }} />)}</div>
         ) : payments.length === 0 ? (
-          <div className="empty-state">
-            <CreditCard size={48} />
-            <h3>No transactions yet</h3>
-            <p>Your payment history will appear here</p>
-          </div>
+          <div className="empty-state"><CreditCard size={48} /><h3>No transactions yet</h3><p>Your payment history will appear here</p></div>
         ) : payments.map((pay, i) => (
-          <div key={pay.id} style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '16px', borderRadius: 12, marginBottom: 10, background: '#f8fafc',
-            border: '1px solid var(--border)', animation: `slideUp 0.4s ease ${i * 0.05}s both`,
-            flexWrap: 'wrap', gap: 12
-          }}>
+          <div key={pay.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 10, background: '#f8fafc', border: '1px solid var(--border)', animation: `slideUp 0.4s ease ${i * 0.05}s both`, flexWrap: 'wrap', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: pay.status === 'RELEASED' ? '#dcfce7' : pay.status === 'ESCROW' ? '#dbeafe' : '#f3f4f6',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                {pay.status === 'RELEASED' ? <CheckCircle size={22} color="#16a34a" /> :
-                 pay.status === 'ESCROW' ? <Clock size={22} color="#1d4ed8" /> :
-                 <CreditCard size={22} color="#64748b" />}
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: pay.status === 'RELEASED' ? '#dcfce7' : pay.status === 'ESCROW' ? '#dbeafe' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {pay.status === 'RELEASED' ? <CheckCircle size={22} color="#16a34a" /> : pay.status === 'ESCROW' ? <Clock size={22} color="#1d4ed8" /> : <CreditCard size={22} color="#64748b" />}
               </div>
               <div>
                 <p style={{ fontWeight: 600, fontSize: 14 }}>{pay.projectTitle}</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {pay.clientName} → {pay.studentName} · {new Date(pay.createdAt).toLocaleDateString()}
-                </p>
-                {pay.transactionId && (
-                  <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>{pay.transactionId}</p>
-                )}
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{pay.clientName} → {pay.studentName} · {new Date(pay.createdAt).toLocaleDateString()}</p>
+                {pay.transactionId && <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>{pay.transactionId}</p>}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -158,8 +130,7 @@ export default function Transactions() {
                 <span className={`badge badge-${pay.status?.toLowerCase()}`}>{pay.status}</span>
               </div>
               {user?.role === 'CLIENT' && pay.status === 'ESCROW' && (
-                <button className="btn btn-success btn-sm" onClick={() => handleRelease(pay.id)}
-                  disabled={releaseLoading === pay.id}>
+                <button className="btn btn-success btn-sm" onClick={() => handleRelease(pay.id)} disabled={releaseLoading === pay.id}>
                   {releaseLoading === pay.id ? 'Releasing...' : 'Release'}
                 </button>
               )}

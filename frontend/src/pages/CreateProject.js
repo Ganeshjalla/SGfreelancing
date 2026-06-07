@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../api/services';
-import { PlusCircle, ArrowRight } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 
 const CATEGORIES = ['Web Development', 'Mobile App', 'UI/UX Design', 'Data Science', 'Machine Learning', 'DevOps', 'Content Writing', 'Digital Marketing', 'Other'];
 

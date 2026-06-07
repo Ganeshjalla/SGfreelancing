@@ -16,17 +16,17 @@ public class MessageService {
 
     @Transactional
     public Map<String, Object> send(String email, Long receiverId, String content, Long projectId) {
+        if (content == null || content.isBlank())
+            throw new BadRequestException("Message content cannot be empty");
         User sender = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
-
+        if (sender.getId().equals(receiverId))
+            throw new BadRequestException("Cannot send message to yourself");
         Message message = Message.builder()
-                .sender(sender)
-                .receiver(receiver)
-                .content(content)
-                .isRead(false)
-                .build();
+                .sender(sender).receiver(receiver)
+                .content(content.trim()).isRead(false).build();
         return toMap(messageRepository.save(message));
     }
 
@@ -36,21 +36,16 @@ public class MessageService {
         User other = userRepository.findById(otherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         List<Message> messages = messageRepository.findConversation(user, other);
-        // Mark as read
-        messages.forEach(m -> {
-            if (m.getReceiver().getId().equals(user.getId()) && !m.getIsRead()) {
-                m.setIsRead(true);
-                messageRepository.save(m);
-            }
-        });
+        messages.stream()
+                .filter(m -> m.getReceiver().getId().equals(user.getId()) && !m.getIsRead())
+                .forEach(m -> { m.setIsRead(true); messageRepository.save(m); });
         return messages.stream().map(this::toMap).toList();
     }
 
     public List<Map<String, Object>> getConversationPartners(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        List<User> partners = messageRepository.findConversationPartners(user);
-        return partners.stream().map(p -> {
+        return messageRepository.findConversationPartners(user).stream().map(p -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", p.getId());
             map.put("name", p.getName());
