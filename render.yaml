@@ -9,7 +9,9 @@ services:
     healthCheckPath: /api/auth/health
     envVars:
       - key: SERVER_PORT
-        value: 8082
+        fromDatabase:
+          property: PORT
+        # Render sets PORT automatically - this tells Spring Boot to use it
       - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
         value: com.mysql.cj.jdbc.Driver
       - key: SPRING_JPA_DATABASE_PLATFORM
