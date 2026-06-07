@@ -4,14 +4,11 @@ services:
     runtime: java
     rootDir: backend
     buildCommand: mvn clean package -DskipTests
+    # Render injects $PORT automatically; Spring Boot reads it via server.port=${PORT:8082}
     startCommand: java -Xms256m -Xmx512m -jar target/sgnexasoft-backend-1.0.0.jar
     plan: free
     healthCheckPath: /api/auth/health
     envVars:
-      - key: SERVER_PORT
-        fromDatabase:
-          property: PORT
-        # Render sets PORT automatically - this tells Spring Boot to use it
       - key: SPRING_DATASOURCE_DRIVER_CLASS_NAME
         value: com.mysql.cj.jdbc.Driver
       - key: SPRING_JPA_DATABASE_PLATFORM
@@ -22,6 +19,7 @@ services:
         value: "false"
       - key: APP_UPLOAD_DIR
         value: /tmp/uploads/
+      # Set these manually in Render dashboard → Environment:
       - key: SPRING_DATASOURCE_URL
         sync: false
       - key: SPRING_DATASOURCE_USERNAME

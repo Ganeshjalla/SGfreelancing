@@ -33,7 +33,10 @@ export default function ProjectDetail() {
       setProject(projRes.data);
       setBids(bidsRes.data);
       setSubmissions(subRes.data);
-    } catch { navigate('/projects'); }
+    } catch (e) {
+      console.error(e);
+      if (e?.response?.status === 404) navigate('/projects');
+    }
     finally { setLoading(false); }
   }, [id, navigate]);
 
@@ -81,9 +84,14 @@ export default function ProjectDetail() {
   };
 
   const handleInitiatePayment = async () => {
+    if (!project?.budget) return;
     setPayLoading(true);
-    try { await paymentAPI.initiate({ projectId: id, amount: project.budget }); showSuccess('Payment placed in escrow!'); loadAll(); }
-    catch (err) { alert(err.response?.data?.message || 'Failed to initiate payment'); }
+    try {
+      // Cast projectId to Number — useParams returns a string; backend expects Long
+      await paymentAPI.initiate({ projectId: Number(id), amount: project.budget });
+      showSuccess('Payment placed in escrow!');
+      loadAll();
+    } catch (err) { alert(err.response?.data?.message || 'Failed to initiate payment'); }
     finally { setPayLoading(false); }
   };
 
@@ -95,10 +103,11 @@ export default function ProjectDetail() {
   );
   if (!project) return null;
 
-  const isClient = user?.role === 'CLIENT' && project.clientId === user?.id;
+  // Use Number() for safe comparison — API returns numbers, localStorage may store them as numbers or strings
+  const isClient = user?.role === 'CLIENT' && Number(project.clientId) === Number(user?.id);
   const isStudent = user?.role === 'STUDENT';
-  const isAssigned = project.assignedStudentId === user?.id;
-  const myBid = bids.find(b => b.studentId === user?.id);
+  const isAssigned = Number(project.assignedStudentId) === Number(user?.id);
+  const myBid = bids.find(b => Number(b.studentId) === Number(user?.id));
   const tabs = [
     { key: 'details', label: 'Details' },
     ...(isClient || user?.role === 'ADMIN' ? [{ key: 'bids', label: `Bids (${bids.length})` }] : []),

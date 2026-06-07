@@ -19,13 +19,15 @@ public class CorsConfig {
         var config = new CorsConfiguration();
         config.setAllowCredentials(true);
         // Allow localhost dev + any Vercel/Render production URL
+        // NOTE: "*" cannot be combined with allowCredentials=true (CORS spec violation).
+        // Using specific patterns instead.
         config.setAllowedOriginPatterns(List.of(
             "http://localhost:3000",
             "http://localhost:80",
             "http://localhost",
             "https://*.vercel.app",
             "https://*.onrender.com",
-            "*"
+            frontendUrl
         ));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));

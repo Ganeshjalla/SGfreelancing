@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -52,12 +54,44 @@ public class ProjectService {
                 .budget(Double.parseDouble(req.get("budget").toString()))
                 .category((String) req.get("category"))
                 .requiredSkills((String) req.get("requiredSkills"))
-                .deadline(req.get("deadline") != null && !req.get("deadline").toString().isBlank()
-                        ? LocalDateTime.parse(req.get("deadline").toString()) : null)
+                .deadline(parseDeadline(req.get("deadline")))
                 .client(client)
                 .status(Project.Status.OPEN)
                 .build();
         return toMap(projectRepository.save(project));
+    }
+
+    @Transactional
+    public Map<String, Object> updateProject(Long id, String email, Map<String, Object> req) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!project.getClient().getId().equals(user.getId()) && user.getRole() != User.Role.ADMIN)
+            throw new BadRequestException("Not authorized");
+        if (project.getStatus() != Project.Status.OPEN)
+            throw new BadRequestException("Can only edit OPEN projects");
+
+        if (req.containsKey("title")) project.setTitle(req.get("title").toString().trim());
+        if (req.containsKey("description")) project.setDescription(req.get("description").toString());
+        if (req.containsKey("budget")) project.setBudget(Double.parseDouble(req.get("budget").toString()));
+        if (req.containsKey("category")) project.setCategory(req.get("category").toString());
+        if (req.containsKey("requiredSkills")) project.setRequiredSkills(req.get("requiredSkills").toString());
+        if (req.containsKey("deadline")) project.setDeadline(parseDeadline(req.get("deadline")));
+        return toMap(projectRepository.save(project));
+    }
+
+    @Transactional
+    public void deleteProject(Long id, String email) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!project.getClient().getId().equals(user.getId()) && user.getRole() != User.Role.ADMIN)
+            throw new BadRequestException("Not authorized");
+        if (project.getStatus() == Project.Status.IN_PROGRESS)
+            throw new BadRequestException("Cannot delete a project that is in progress");
+        projectRepository.delete(project);
     }
 
     public List<Map<String, Object>> getMyProjects(String email) {
@@ -79,6 +113,22 @@ public class ProjectService {
             throw new BadRequestException("Not authorized");
         project.setStatus(Project.Status.valueOf(status));
         return toMap(projectRepository.save(project));
+    }
+
+    private LocalDateTime parseDeadline(Object raw) {
+        if (raw == null) return null;
+        String s = raw.toString().trim();
+        if (s.isBlank()) return null;
+        // Accept ISO without seconds: "2024-12-01T10:00" and with seconds: "2024-12-01T10:00:00"
+        try {
+            return LocalDateTime.parse(s);
+        } catch (DateTimeParseException e) {
+            try {
+                return LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+            } catch (DateTimeParseException ex) {
+                throw new BadRequestException("Invalid deadline format. Use ISO format: yyyy-MM-ddTHH:mm");
+            }
+        }
     }
 
     public Map<String, Object> toMap(Project p) {

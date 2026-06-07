@@ -13,6 +13,7 @@ import java.util.*;
 public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
 
     @Transactional
     public Map<String, Object> send(String email, Long receiverId, String content, Long projectId) {
@@ -24,10 +25,16 @@ public class MessageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Receiver not found"));
         if (sender.getId().equals(receiverId))
             throw new BadRequestException("Cannot send message to yourself");
-        Message message = Message.builder()
+
+        Message.MessageBuilder builder = Message.builder()
                 .sender(sender).receiver(receiver)
-                .content(content.trim()).isRead(false).build();
-        return toMap(messageRepository.save(message));
+                .content(content.trim()).isRead(false);
+
+        if (projectId != null) {
+            projectRepository.findById(projectId).ifPresent(builder::project);
+        }
+
+        return toMap(messageRepository.save(builder.build()));
     }
 
     public List<Map<String, Object>> getConversation(String email, Long otherUserId) {

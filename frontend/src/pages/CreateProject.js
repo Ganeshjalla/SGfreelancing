@@ -21,7 +21,8 @@ export default function CreateProject() {
       const payload = {
         ...form,
         budget: parseFloat(form.budget),
-        deadline: form.deadline ? new Date(form.deadline).toISOString().slice(0,19) : null
+        // Send exactly as datetime-local gives it ("yyyy-MM-ddTHH:mm") — backend handles both formats
+      deadline: form.deadline || null
       };
       const res = await projectAPI.create(payload);
       navigate(`/projects/${res.data.id}`);

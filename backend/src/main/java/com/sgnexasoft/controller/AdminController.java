@@ -34,7 +34,7 @@ public class AdminController {
 
     @GetMapping("/projects")
     public ResponseEntity<?> getAllProjects() {
-        return ResponseEntity.ok(projectRepository.findAll().stream().map(p -> {
+        return ResponseEntity.ok(projectRepository.findAllWithClient().stream().map(p -> {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", p.getId());
             map.put("title", p.getTitle());

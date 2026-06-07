@@ -12,7 +12,11 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByClientOrderByCreatedAtDesc(User client);
     List<Project> findByAssignedStudentOrderByCreatedAtDesc(User student);
     boolean existsByClientAndTitle(User client, String title);
-    
+
+    // Fetches client eagerly to avoid N+1 in admin list
+    @Query("SELECT p FROM Project p LEFT JOIN FETCH p.client ORDER BY p.createdAt DESC")
+    List<Project> findAllWithClient();
+
     @Query("SELECT p FROM Project p WHERE p.status = :status AND " +
            "(:category IS NULL OR p.category = :category) AND " +
            "(:search IS NULL OR LOWER(p.title) LIKE LOWER(CONCAT('%',:search,'%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%',:search,'%'))) " +

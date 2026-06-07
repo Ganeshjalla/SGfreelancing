@@ -11,6 +11,8 @@ export const projectAPI = {
   getAll: (params) => api.get('/api/projects', { params }),
   getById: (id) => api.get(`/api/projects/${id}`),
   create: (data) => api.post('/api/projects', data),
+  update: (id, data) => api.put(`/api/projects/${id}`, data),
+  delete: (id) => api.delete(`/api/projects/${id}`),
   getMy: () => api.get('/api/projects/my'),
   updateStatus: (id, status) => api.patch(`/api/projects/${id}/status`, { status }),
 };
